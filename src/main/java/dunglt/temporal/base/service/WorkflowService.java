@@ -1,0 +1,31 @@
+package dunglt.temporal.base.service;
+
+import dunglt.temporal.base.model.MWorkflow;
+import dunglt.temporal.base.repository.WorkflowRepository;
+
+import org.springframework.stereotype.Service;
+
+import java.util.List;
+
+@Service
+public class WorkflowService {
+
+    private final WorkflowRepository workflowRepository;
+
+
+    public WorkflowService(WorkflowRepository workflowRepository) {
+        this.workflowRepository = workflowRepository;
+    }
+
+    public List<String> getListWorkflowTaskQueue() {
+        return workflowRepository.findAllWorkflowTaskQueue();
+    }
+
+    public Integer getActivityNumberByWorkflowId(Integer workflowId) {
+        return workflowRepository.getActivityNumberByWorkflowId(workflowId);
+    }
+
+    public void createConfigWorkflow(MWorkflow mWorkflow) {
+        workflowRepository.save(mWorkflow);
+    }
+}
