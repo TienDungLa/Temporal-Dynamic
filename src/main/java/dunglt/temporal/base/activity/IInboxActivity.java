@@ -7,6 +7,6 @@ public interface IInboxActivity {
 
     String createNewInbox(String data);
 
-    String updateInbox(String data);
+    String updateInbox(String typeUpdate, String activity);
 
 }

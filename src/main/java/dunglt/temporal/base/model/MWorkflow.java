@@ -29,9 +29,4 @@ public class MWorkflow {
     @Column(name = "workflow_taskqueue")
     private String workflowTaskqueue;
 
-    @Column(name = "isSagaPattern")
-    private boolean isSagaPattern;
-
-
-
 }

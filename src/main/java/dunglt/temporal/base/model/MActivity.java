@@ -27,20 +27,28 @@ public class MActivity {
     @Column(name = "sequenceNo")
     private Integer sequenceNo;
 
-    @Column (name = "sendByRestApi")
-    private boolean sendByRestApi;
+    @Column(name = "retry_attempt")
+    private Integer retryAttempt;
 
-    @Column (name = "responseByRestApi")
-    private boolean responseByRestApi;
+    // method: Rest, MQ, Websocket
+    @Column(name = "send_method")
+    private String sendMethod;
+
+    // method: Rest, MQ, Websocket
+    @Column(name = "response_method")
+    private String responseMethod;
+
+    @Column(name = "notify_method")
+    private String notifyMethod;
 
     //url để gửi request từ orches đến service
-    @Column (name = "send_url")
+    @Column(name = "send_url")
     private String sendUrl;
 
-    // url để service nhận trạng thái cuối của workflow
-    @Column (name = "response_url")
+    // url để response từ service trả về orches (nếu có)
+    @Column(name = "response_url")
     private String responseUrl;
 
-    @Column (name = "notify_url")
+    @Column(name = "notify_url")
     private String notifyUrl;
 }
