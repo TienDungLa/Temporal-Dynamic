@@ -38,6 +38,7 @@ public class MActivity {
     @Column(name = "response_method")
     private String responseMethod;
 
+    // method: Rest, MQ, Websocket
     @Column(name = "notify_method")
     private String notifyMethod;
 

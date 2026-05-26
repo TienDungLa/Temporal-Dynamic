@@ -1,6 +1,7 @@
 package dunglt.temporal.api.controller;
 
 
+import dunglt.temporal.api.dto.DataDTO;
 import dunglt.temporal.base.service.WorkflowClientService;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -17,9 +18,9 @@ public class WorkflowController {
 
 
     @PostMapping("/start")
-    public String StartWorkflow(String workflowType) {
-        workflowClientService.startWorkflow(workflowType);
-        return "Workflow started: " + workflowType;
+    public String StartWorkflow(DataDTO sendData) {
+        workflowClientService.startWorkflow(sendData);
+        return "Workflow started successfully";
     }
 
 }

@@ -6,4 +6,5 @@ import org.springframework.stereotype.Repository;
 
 @Repository
 public interface InboxRepository extends JpaRepository<MInbox, Integer> {
+    MInbox findByRequestId(String requestId);
 }

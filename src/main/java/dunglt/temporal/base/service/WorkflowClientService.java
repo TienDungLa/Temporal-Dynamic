@@ -1,5 +1,6 @@
 package dunglt.temporal.base.service;
 
+import dunglt.temporal.api.dto.DataDTO;
 import dunglt.temporal.base.model.MActivity;
 import dunglt.temporal.base.model.MWorkflow;
 import dunglt.temporal.base.repository.WorkflowRepository;
@@ -23,9 +24,11 @@ public class WorkflowClientService {
         this.activityService = activityService;
     }
 
-    public void startWorkflow(String workflowType) {
+    public void startWorkflow(DataDTO sendData) {
+        String workflowType = "First Workflow";
         MWorkflow mWorkflow = workflowRepository.findByWorkflowType(workflowType);
-        WorkflowOptions options = getWorkflowOptions(mWorkflow);
+        String requestId = "request-0";
+        WorkflowOptions options = getWorkflowOptions(mWorkflow, requestId);
 
         WorkflowStub stub = workflowClient.newUntypedWorkflowStub(
                 "DynamicWorkflowImpl",
@@ -33,14 +36,13 @@ public class WorkflowClientService {
         );
 
         List<MActivity> activityList = activityService.getListActivityByWorkflowId(mWorkflow.getWorkflowId());
-
-        stub.start(mWorkflow, activityList);
+        stub.start(mWorkflow, activityList, sendData, requestId);
     }
 
-    private WorkflowOptions getWorkflowOptions(MWorkflow mWorkflow) {
+    private WorkflowOptions getWorkflowOptions(MWorkflow mWorkflow, String requestId) {
         return WorkflowOptions.newBuilder()
                 .setTaskQueue(mWorkflow.getWorkflowTaskqueue())
-                .setWorkflowId(mWorkflow.getWorkflowType() + " " + System.currentTimeMillis())
+                .setWorkflowId(requestId)
                 .build();
     }
 }
