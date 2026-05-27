@@ -1,8 +1,10 @@
 package dunglt.temporal.api.dto;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Data;
 
 @Data
 public class DataDTO extends AbstractDTO {
-    private Object Data;
+    @JsonProperty("data")
+    private Object data;
 }
