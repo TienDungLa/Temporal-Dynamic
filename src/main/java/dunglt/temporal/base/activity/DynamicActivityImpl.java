@@ -1,6 +1,13 @@
 package dunglt.temporal.base.activity;
 
 import dunglt.temporal.base.model.MActivity;
+import dunglt.temporal.base.model.MKafkaConfig;
+import dunglt.temporal.base.model.MRestConfig;
+import dunglt.temporal.base.service.ConnectionService;
+import dunglt.temporal.base.utility.HttpRestClient;
+import dunglt.temporal.base.utility.KafkaClient;
+import dunglt.temporal.base.utility.SpringContextBridge;
+import dunglt.temporal.base.utility.TemporalConstant;
 import io.temporal.activity.DynamicActivity;
 import io.temporal.common.converter.EncodedValues;
 import io.temporal.failure.ApplicationFailure;
@@ -17,23 +24,46 @@ public class DynamicActivityImpl implements DynamicActivity {
     @Override
     public Object execute(EncodedValues args) {
         MActivity mActivity = args.get(0, MActivity.class);
+        Object data = args.get(1, Object.class);
         Map<String, Object> activityData = new HashMap<>();
+        ConnectionService connectionService = SpringContextBridge.getBean(ConnectionService.class);
 
 
         try{
             logger.info("Executing activity: {}", mActivity.getActivityType());
 
-            if (mActivity.getSequenceNo().equals(2)){
-                throw ApplicationFailure.newFailure("Simulated failure in activity " + mActivity.getActivityType(), "SimulatedFailure");
+            if (!StringUtils.hasText(mActivity.getSendMethod())){
+                //TODO: throw error
             }
 
-            if (StringUtils.hasText(mActivity.getSendMethod())){
-
+            switch (mActivity.getSendMethod()) {
+                case "Rest":
+                    MRestConfig restConfig = connectionService
+                            .getRestConfigByActivityIdAndType(mActivity.getActivityId(), TemporalConstant.REST_CONFIG_TYPE_SEND);
+                    HttpRestClient restClient = SpringContextBridge.getBean(HttpRestClient.class);
+                    Object response = restClient.sendRequest(data, restConfig);
+                    activityData.put("firstResponseData", response);
+                    break;
+                case "MQ":
+                    break;
+                case "WH":
+                    break;
             }
 
-            // Handle response method if specified(rcm is wh), this response data will be used in next activity if needed
+            // Handle response method if specified(rcm is mq), this response data will be used in next activity if needed
             if(StringUtils.hasText(mActivity.getResponseMethod())){
-
+                    switch (mActivity.getResponseMethod()) {
+                        case "Rest":
+                            break;
+                        case "MQ":
+                            MKafkaConfig config = connectionService
+                                    .getKafkaConfigByActivityIdAndType(mActivity.getActivityId()
+                                            , TemporalConstant.MQ_CONFIG_TYPE_RESPONSE);
+                            KafkaClient client = SpringContextBridge.getBean(KafkaClient.class);
+                            Object responseData = client.waitForMessage(config);
+                            activityData.put("responseData", responseData);
+                            break;
+                    }
             }
 
         }catch (ApplicationFailure applicationFailure){
@@ -44,9 +74,26 @@ public class DynamicActivityImpl implements DynamicActivity {
             throw ApplicationFailure.newFailure(e.getMessage(), "ActivityExecutionFailure");
         }
 
-        activityData.put("responseData", "response data from activity " + mActivity.getSequenceNo());
+        // validate data step before return
 
+        if (mActivity.getIsFirstResponseData()){
+            activityData.put("responseData", activityData.get("firstResponseData"));
+        }
+
+        if (activityData.get("responseData") == null){
+            activityData.put("responseData", defaultResponseData());
+        }
+
+
+        /* the result map of process will contain
+        - firstResponseData: the data that is returned from the first send method execution, normally is a status from
+        first step
+        - responseData: the data that will is returned form second step in this method
+         */
         return activityData;
     }
 
+    private Object defaultResponseData(){
+        return "default response data";
+    }
 }

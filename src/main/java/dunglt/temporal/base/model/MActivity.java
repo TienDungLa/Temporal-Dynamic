@@ -42,14 +42,8 @@ public class MActivity {
     @Column(name = "notify_method")
     private String notifyMethod;
 
-    //url để gửi request từ orches đến service
-    @Column(name = "send_url")
-    private String sendUrl;
+    //this boolean field will determine if the response data will be the firstData or the secondData
+    @Column(name = "isFirstResponseData")
+    private Boolean isFirstResponseData;
 
-    // url để response từ service trả về orches (nếu có)
-    @Column(name = "response_url")
-    private String responseUrl;
-
-    @Column(name = "notify_url")
-    private String notifyUrl;
 }

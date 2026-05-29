@@ -9,6 +9,7 @@ import dunglt.temporal.base.model.MActivity;
 import dunglt.temporal.base.model.MInbox;
 import dunglt.temporal.base.model.MWorkflow;
 import dunglt.temporal.base.utility.Converter;
+import dunglt.temporal.base.utility.TemporalConstant;
 import io.temporal.activity.ActivityOptions;
 import io.temporal.common.RetryOptions;
 import io.temporal.common.converter.EncodedValues;
@@ -64,7 +65,7 @@ public class DynamicWorkflowImpl implements DynamicWorkflow {
                 //begin saga pattern
                 inboxActivity.createNewInbox(mActivity, currentRequestId);
 
-                inboxActivity.updateInbox(MInbox.STATUS_PROCESSING, currentRequestId, currentSendData, null);
+                inboxActivity.updateInbox(TemporalConstant.INBOX_STATUS_PROCESSING, currentRequestId, currentSendData);
 
                 if (mActivity.getSequenceNo().equals(0)){
                     continue; // Skip activities with sequence 0
@@ -74,7 +75,7 @@ public class DynamicWorkflowImpl implements DynamicWorkflow {
 
                 // Execute activity and handle compensation if it fails
                 try{
-                    activityData =  activity.execute("DynamicActivityImpl", Map.class, mActivity);
+                    activityData =  activity.execute("DynamicActivityImpl", Map.class, mActivity, currentSendData);
                     currentSendData = activityData.get("responseData");
                 }catch (Exception e){
                     logger.info("Error in activity {}, starting compensation step", mActivity.getActivityType(), e);
@@ -82,7 +83,7 @@ public class DynamicWorkflowImpl implements DynamicWorkflow {
                     return null; // End workflow execution after compensation
                 }
 
-                inboxActivity.updateInbox(MInbox.STATUS_COMPLETED, currentRequestId, null, currentSendData);
+                inboxActivity.updateInbox(TemporalConstant.INBOX_STATUS_COMPLETED, currentRequestId, currentSendData);
 
                 // End saga pattern
             }
@@ -112,15 +113,18 @@ public class DynamicWorkflowImpl implements DynamicWorkflow {
     private void processCompensationStep(List<MActivity> activityList, Exception e){
         for (int i = currentActivityIndex; i >= 0; i--){
             String requestId = activityRequest.get(activityList.get(i).getActivityType());
-            notificationActivity.sendNotification("Compensation for activity: "
-                    + activityList.get(i).getActivityType());
+            String notifyResult = null;
+
+            // Update inbox with failure status and error message for the failed activity
             if (activityList.get(i).getSequenceNo().equals(currentActivityIndex)){
-                // Update inbox with failure status and error message for the failed activity
-                inboxActivity.updateInbox(MInbox.STATUS_FAILED, requestId, null, e.toString());
-                continue;
+                inboxActivity.updateInbox(TemporalConstant.INBOX_STATUS_FAILED, requestId, e.toString());
+            }else{
+                inboxActivity.updateInbox(TemporalConstant.INBOX_STATUS_FAILED, requestId,null);
             }
 
-            inboxActivity.updateInbox(MInbox.STATUS_FAILED, requestId, null, null);
+            notifyResult = notificationActivity.sendNotification(TemporalConstant.NOTIFY_TYPE_COMPENSATION, activityList.get(i));
+
+            inboxActivity.updateInbox(TemporalConstant.INBOX_STATUS_COMPENSATION, requestId, notifyResult);
         }
 
         logger.info("Compensation completed for workflow");
@@ -130,8 +134,11 @@ public class DynamicWorkflowImpl implements DynamicWorkflow {
         for (MActivity mActivity : activityList){
             if (StringUtils.hasText(mActivity.getNotifyMethod())){
                 String requestId = activityRequest.get(mActivity.getActivityType());
-                notificationActivity.sendNotification("Completed activity: " + mActivity.getActivityType());
-                inboxActivity.updateInbox(MInbox.STATUS_NOTIFIED, requestId, null, null);
+                String notifyResult = null;
+
+
+                notifyResult = notificationActivity.sendNotification(TemporalConstant.NOTIFY_TYPE_COMPLETED, mActivity);
+                inboxActivity.updateInbox(TemporalConstant.INBOX_STATUS_NOTIFIED, requestId, notifyResult);
             }
         }
         logger.info("Notification completed for workflow");

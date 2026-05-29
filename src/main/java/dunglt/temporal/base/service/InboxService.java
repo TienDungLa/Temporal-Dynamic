@@ -5,6 +5,7 @@ import dunglt.temporal.base.model.MActivity;
 import dunglt.temporal.base.model.MInbox;
 import dunglt.temporal.base.repository.InboxRepository;
 import dunglt.temporal.base.utility.Converter;
+import dunglt.temporal.base.utility.TemporalConstant;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 
@@ -20,7 +21,7 @@ public class InboxService {
     public void createInbox(MActivity mActivity, String requestId, String workflowId){
         // Create new inbox in database with status "pending"
         MInbox mInbox = new MInbox();
-        mInbox.setStatus(MInbox.STATUS_CREATED);
+        mInbox.setStatus(TemporalConstant.INBOX_STATUS_CREATED);
         mInbox.setWorkflowId(workflowId);
         mInbox.setRequestId(requestId);
         mInbox.setActivitySequence(mActivity.getSequenceNo());
@@ -30,33 +31,40 @@ public class InboxService {
     public String updateInbox(String typeUpdate, String requestId, Object data){
         MInbox mInbox = inboxRepository.findByRequestId(requestId);
 
-        if (typeUpdate.equals(MInbox.STATUS_PROCESSING)){
-            mInbox.setStatus(MInbox.STATUS_PROCESSING);
+        if (typeUpdate.equals(TemporalConstant.INBOX_STATUS_PROCESSING)){
+            mInbox.setStatus(TemporalConstant.INBOX_STATUS_PROCESSING);
             mInbox.setSendPayload(Converter.convertFromObjToJsonString(data));
             inboxRepository.save(mInbox);
             return "Processing";
         }
 
-        if (typeUpdate.equals(MInbox.STATUS_COMPLETED)){
-            mInbox.setStatus(MInbox.STATUS_COMPLETED);
+        if (typeUpdate.equals(TemporalConstant.INBOX_STATUS_COMPLETED)){
+            mInbox.setStatus(TemporalConstant.INBOX_STATUS_COMPLETED);
             mInbox.setResponsePayload(Converter.convertFromObjToJsonString(data));
             inboxRepository.save(mInbox);
             return "Completed";
         }
 
-        if (typeUpdate.equals(MInbox.STATUS_NOTIFIED)){
-            mInbox.setStatus(MInbox.STATUS_NOTIFIED);
+        if (typeUpdate.equals(TemporalConstant.INBOX_STATUS_NOTIFIED)){
+            mInbox.setStatus(TemporalConstant.INBOX_STATUS_NOTIFIED);
+            mInbox.setNotifyResult(data.toString());
             inboxRepository.save(mInbox);
             return "Notified";
         }
 
-        if (typeUpdate.equals(MInbox.STATUS_FAILED)){
-            mInbox.setStatus(MInbox.STATUS_FAILED);
+        if (typeUpdate.equals(TemporalConstant.INBOX_STATUS_FAILED)){
+            mInbox.setStatus(TemporalConstant.INBOX_STATUS_FAILED);
             if (data != null && StringUtils.hasText(data.toString())){
                 mInbox.setErrorMessage(Converter.convertFromObjToJsonString(data));
             }
             inboxRepository.save(mInbox);
             return "Failed";
+        }
+
+        if (typeUpdate.equals(TemporalConstant.INBOX_STATUS_COMPENSATION)){
+            mInbox.setStatus(TemporalConstant.INBOX_STATUS_COMPENSATION);
+            inboxRepository.save(mInbox);
+            return "Compensation";
         }
 
         return "";

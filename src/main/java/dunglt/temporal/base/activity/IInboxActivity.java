@@ -12,6 +12,6 @@ public interface IInboxActivity {
     String createNewInbox(MActivity mActivity, String requestId);
 
     @ActivityMethod
-    String updateInbox(String typeUpdate, String activity, Object data, Object response);
+    String updateInbox(String typeUpdate, String activity, Object data);
 
 }

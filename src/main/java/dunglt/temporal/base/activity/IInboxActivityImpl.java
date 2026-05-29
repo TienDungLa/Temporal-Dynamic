@@ -1,10 +1,9 @@
 package dunglt.temporal.base.activity;
 
 import dunglt.temporal.api.dto.DataDTO;
-import dunglt.temporal.base.model.MActivity;
-import dunglt.temporal.base.model.MInbox;
-import dunglt.temporal.base.service.InboxService;
+import dunglt.temporal.base.model.MActivity;import dunglt.temporal.base.service.InboxService;
 import dunglt.temporal.base.utility.SpringContextBridge;
+import dunglt.temporal.base.utility.TemporalConstant;
 import io.temporal.activity.Activity;
 import io.temporal.activity.ActivityExecutionContext;
 
@@ -24,19 +23,21 @@ public class IInboxActivityImpl implements IInboxActivity {
     }
 
     @Override
-    public String updateInbox(String typeUpdate, String requestId, Object data, Object response) {
+    public String updateInbox(String typeUpdate, String requestId, Object data) {
         inboxService = SpringContextBridge.getBean(InboxService.class);
         System.out.println("Update inbox with data: " + typeUpdate + " - " + requestId);
 
         try{
-            if (typeUpdate.equals(MInbox.STATUS_PROCESSING)){
-                 inboxService.updateInbox(MInbox.STATUS_PROCESSING, requestId, data);
-            } else if (typeUpdate.equals(MInbox.STATUS_COMPLETED)) {
-                inboxService.updateInbox(MInbox.STATUS_COMPLETED, requestId, response);
-            } else if (typeUpdate.equals(MInbox.STATUS_NOTIFIED)) {
-                inboxService.updateInbox(MInbox.STATUS_NOTIFIED, requestId, null);
-            } else if (typeUpdate.equals(MInbox.STATUS_FAILED)) {
-                inboxService.updateInbox(MInbox.STATUS_FAILED, requestId, response);
+            if (typeUpdate.equals(TemporalConstant.INBOX_STATUS_PROCESSING)){
+                 inboxService.updateInbox(TemporalConstant.INBOX_STATUS_PROCESSING, requestId, data);
+            } else if (typeUpdate.equals(TemporalConstant.INBOX_STATUS_COMPLETED)) {
+                inboxService.updateInbox(TemporalConstant.INBOX_STATUS_COMPLETED, requestId, data);
+            } else if (typeUpdate.equals(TemporalConstant.INBOX_STATUS_NOTIFIED)) {
+                inboxService.updateInbox(TemporalConstant.INBOX_STATUS_NOTIFIED, requestId, data);
+            } else if (typeUpdate.equals(TemporalConstant.INBOX_STATUS_FAILED)) {
+                inboxService.updateInbox(TemporalConstant.INBOX_STATUS_FAILED, requestId, data);
+            } else if (typeUpdate.equals(TemporalConstant.INBOX_STATUS_COMPENSATION)) {
+                inboxService.updateInbox(TemporalConstant.INBOX_STATUS_COMPENSATION, requestId, null);
             }
         }catch (Exception e){
 
