@@ -4,20 +4,26 @@ import dunglt.temporal.api.dto.DataDTO;
 import dunglt.temporal.base.model.MActivity;import dunglt.temporal.base.service.InboxService;
 import dunglt.temporal.base.utility.SpringContextBridge;
 import dunglt.temporal.base.utility.TemporalConstant;
+import dunglt.temporal.error.service.ErrorService;
 import io.temporal.activity.Activity;
 import io.temporal.activity.ActivityExecutionContext;
 
 public class IInboxActivityImpl implements IInboxActivity {
     private InboxService inboxService;
+    private ErrorService errorService;
 
 
     @Override
     public String createNewInbox(MActivity mActivity, String requestId) {
         ActivityExecutionContext ctx = Activity.getExecutionContext();
+        errorService = SpringContextBridge.getBean(ErrorService.class);
 
-        inboxService = SpringContextBridge.getBean(InboxService.class);
-        System.out.println("Create new inbox with data: " + mActivity.getActivityType());
-        inboxService.createInbox(mActivity, requestId, ctx.getInfo().getWorkflowId());
+        try{
+            inboxService = SpringContextBridge.getBean(InboxService.class);
+            inboxService.createInbox(mActivity, requestId, ctx.getInfo().getWorkflowId());
+        }catch (Exception e){
+            errorService.nonRetryableError("Exception: " + e.getMessage() + " when create inbox for requestId: " + requestId);
+        }
 
         return "";
     }
@@ -25,7 +31,7 @@ public class IInboxActivityImpl implements IInboxActivity {
     @Override
     public String updateInbox(String typeUpdate, String requestId, Object data) {
         inboxService = SpringContextBridge.getBean(InboxService.class);
-        System.out.println("Update inbox with data: " + typeUpdate + " - " + requestId);
+        errorService = SpringContextBridge.getBean(ErrorService.class);
 
         try{
             if (typeUpdate.equals(TemporalConstant.INBOX_STATUS_PROCESSING)){
@@ -40,7 +46,7 @@ public class IInboxActivityImpl implements IInboxActivity {
                 inboxService.updateInbox(TemporalConstant.INBOX_STATUS_COMPENSATION, requestId, null);
             }
         }catch (Exception e){
-
+            errorService.nonRetryableError("Exception: " + e.getMessage() + " when update inbox with requestId: " + requestId);
         }
 
 

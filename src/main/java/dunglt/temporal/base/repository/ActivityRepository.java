@@ -14,4 +14,7 @@ public interface ActivityRepository extends JpaRepository<MActivity, Integer> {
 
     @Query("SELECT a FROM MActivity a WHERE a.workflowId = :workflowId ORDER BY a.sequenceNo ASC")
     List<MActivity> findByWorkflowId(Integer workflowId);
+
+    @Query("SELECT a FROM MActivity a WHERE a.sequenceNo = 0")
+    List<MActivity> getAllActivity0();
 }

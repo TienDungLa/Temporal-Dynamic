@@ -8,6 +8,7 @@ import dunglt.temporal.base.utility.HttpRestClient;
 import dunglt.temporal.base.utility.KafkaClient;
 import dunglt.temporal.base.utility.SpringContextBridge;
 import dunglt.temporal.base.utility.TemporalConstant;
+import dunglt.temporal.error.service.ErrorService;
 import io.temporal.activity.DynamicActivity;
 import io.temporal.common.converter.EncodedValues;
 import io.temporal.failure.ApplicationFailure;
@@ -20,6 +21,7 @@ import java.util.Map;
 
 public class DynamicActivityImpl implements DynamicActivity {
     private static final Logger logger = LoggerFactory.getLogger(DynamicActivityImpl.class);
+    private ErrorService errorService;
 
     @Override
     public Object execute(EncodedValues args) {
@@ -27,13 +29,14 @@ public class DynamicActivityImpl implements DynamicActivity {
         Object data = args.get(1, Object.class);
         Map<String, Object> activityData = new HashMap<>();
         ConnectionService connectionService = SpringContextBridge.getBean(ConnectionService.class);
-
+        errorService = SpringContextBridge.getBean(ErrorService.class);
 
         try{
             logger.info("Executing activity: {}", mActivity.getActivityType());
 
             if (!StringUtils.hasText(mActivity.getSendMethod())){
-                //TODO: throw error
+                errorService.nonRetryableError("Activity: " + mActivity.getActivityType()
+                        + " does not have send method defined (send method is required)");
             }
 
             switch (mActivity.getSendMethod()) {
@@ -67,10 +70,10 @@ public class DynamicActivityImpl implements DynamicActivity {
             }
 
         }catch (ApplicationFailure applicationFailure){
-            logger.error("Application failure executing activity: {}", mActivity.getActivityType(), applicationFailure);
+            logger.error("Error executing activity: {}", mActivity.getActivityType());
             throw applicationFailure;
         }catch (Exception e){
-            logger.error("Error executing activity: {}", mActivity.getActivityType(), e);
+            logger.error("Unexpected error during executing activity: {}", mActivity.getActivityType());
             throw ApplicationFailure.newFailure(e.getMessage(), "ActivityExecutionFailure");
         }
 

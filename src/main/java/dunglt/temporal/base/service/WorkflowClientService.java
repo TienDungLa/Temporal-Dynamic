@@ -4,10 +4,12 @@ import dunglt.temporal.api.dto.DataDTO;
 import dunglt.temporal.base.model.MActivity;
 import dunglt.temporal.base.model.MWorkflow;
 import dunglt.temporal.base.repository.WorkflowRepository;
+import dunglt.temporal.error.service.ErrorService;
 import io.temporal.client.WorkflowClient;
 import io.temporal.client.WorkflowOptions;
 import io.temporal.client.WorkflowStub;
 import org.springframework.stereotype.Service;
+import org.springframework.util.StringUtils;
 
 import java.util.List;
 
@@ -17,19 +19,26 @@ public class WorkflowClientService {
     private final WorkflowClient workflowClient;
     private final WorkflowRepository workflowRepository;
     private final ActivityService activityService;
+    private final ErrorService errorService;
 
-    public WorkflowClientService(WorkflowClient workflowClient, WorkflowRepository workflowRepository, ActivityService activityService) {
+    public WorkflowClientService(WorkflowClient workflowClient, WorkflowRepository workflowRepository, ActivityService activityService, ErrorService errorService) {
         this.workflowClient = workflowClient;
         this.workflowRepository = workflowRepository;
         this.activityService = activityService;
+        this.errorService = errorService;
     }
 
-    public void startWorkflow(DataDTO sendData) {
-        String workflowType = "First Workflow";
+    public void startWorkflow(DataDTO sendData, String requestId) {
+        String workflowType = sendData.getWorkflowType();
         MWorkflow mWorkflow = workflowRepository.findByWorkflowType(workflowType);
-        String requestId = "request-0";
-        WorkflowOptions options = getWorkflowOptions(mWorkflow, requestId);
 
+        if (mWorkflow ==null){
+             throw errorService.notFound("WORKFLOW_TYPE_NOT_FOUND",
+                    "Workflow type not found",
+                    "workflowType=" + workflowType);
+        }
+
+        WorkflowOptions options = getWorkflowOptions(mWorkflow, requestId);
         WorkflowStub stub = workflowClient.newUntypedWorkflowStub(
                 "DynamicWorkflowImpl",
                 options
@@ -37,6 +46,8 @@ public class WorkflowClientService {
 
         List<MActivity> activityList = activityService.getListActivityByWorkflowId(mWorkflow.getWorkflowId());
         stub.start(mWorkflow, activityList, sendData, requestId);
+
+
     }
 
     private WorkflowOptions getWorkflowOptions(MWorkflow mWorkflow, String requestId) {

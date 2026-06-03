@@ -43,7 +43,7 @@ public class MainController {
     }
 
     @PostMapping("/manual-reload")
-    public String reloadWorkerFactory(){
+    public String reloadWorkerFactory()  {
         return temporalWorkerManager.reloadWorkerFactory();
     }
 

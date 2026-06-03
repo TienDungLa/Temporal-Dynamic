@@ -9,10 +9,14 @@ import dunglt.temporal.base.model.MActivity;
 import dunglt.temporal.base.model.MInbox;
 import dunglt.temporal.base.model.MWorkflow;
 import dunglt.temporal.base.utility.Converter;
+import dunglt.temporal.base.utility.SpringContextBridge;
 import dunglt.temporal.base.utility.TemporalConstant;
+import dunglt.temporal.error.service.ErrorService;
 import io.temporal.activity.ActivityOptions;
 import io.temporal.common.RetryOptions;
 import io.temporal.common.converter.EncodedValues;
+import io.temporal.failure.ActivityFailure;
+import io.temporal.failure.ApplicationFailure;
 import io.temporal.workflow.ActivityStub;
 import io.temporal.workflow.DynamicWorkflow;
 import io.temporal.workflow.Workflow;
@@ -21,10 +25,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.util.StringUtils;
 
 import java.time.Duration;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 
 public class DynamicWorkflowImpl implements DynamicWorkflow {
@@ -34,6 +35,7 @@ public class DynamicWorkflowImpl implements DynamicWorkflow {
     private INotificationActivity notificationActivity;
     private int currentActivityIndex = 0;
     private Map<String, String> activityRequest = new HashMap<>();
+    private ErrorService errorService = SpringContextBridge.getBean(ErrorService.class);
 
     @Override
     public Object execute(EncodedValues args) {
@@ -41,6 +43,7 @@ public class DynamicWorkflowImpl implements DynamicWorkflow {
         List<MActivity> activityList = Converter.convertFromObjToActivityList(args.get(1, List.class));
         Object currentSendData = args.get(2, Object.class);
         String currentRequestId =  args.get(3, String.class);
+
 
         this.inboxActivity = Workflow.newActivityStub(IInboxActivity.class,
                 ActivityOptions.newBuilder()
@@ -57,7 +60,7 @@ public class DynamicWorkflowImpl implements DynamicWorkflow {
                 ActivityStub activity = Workflow.newUntypedActivityStub(getActivityOptions(mActivity));
 
                 if (!mActivity.getSequenceNo().equals(0)){
-                    currentRequestId = "request-" + mActivity.getSequenceNo();
+                    currentRequestId = UUID.randomUUID().toString();
                 }
 
                 activityRequest.put(mActivity.getActivityType(), currentRequestId);
@@ -77,10 +80,10 @@ public class DynamicWorkflowImpl implements DynamicWorkflow {
                 try{
                     activityData =  activity.execute("DynamicActivityImpl", Map.class, mActivity, currentSendData);
                     currentSendData = activityData.get("responseData");
-                }catch (Exception e){
-                    logger.info("Error in activity {}, starting compensation step", mActivity.getActivityType(), e);
+                }catch (ActivityFailure e){
+                    logger.warn("Error in activity {}, starting compensation step", mActivity.getActivityType());
                     processCompensationStep(activityList, e);
-                    return null; // End workflow execution after compensation
+                    throw e; // End workflow execution after compensation
                 }
 
                 inboxActivity.updateInbox(TemporalConstant.INBOX_STATUS_COMPLETED, currentRequestId, currentSendData);
@@ -92,21 +95,26 @@ public class DynamicWorkflowImpl implements DynamicWorkflow {
             processNotificationStep(activityList);
 
         }catch (Exception e) {
-            logger.error("Error executing workflow: {}", mWorkflow.getWorkflowType(), e);
+            logger.info("Error executing workflow: {}", mWorkflow.getWorkflowType());
         }
 
         return null;
     }
 
-    private ActivityOptions getActivityOptions(MActivity mActivity){
-        int retryAttempts = 3;
-        if (mActivity.getRetryAttempt() != null && mActivity.getRetryAttempt() > 0){
-            retryAttempts = mActivity.getRetryAttempt();
+    private ActivityOptions getActivityOptions(MActivity mActivity) {
+        RetryOptions retryOptions = RetryOptions.newBuilder()
+                .setMaximumAttempts(1)
+                .build(); // default
+
+        if (mActivity.getRetryAttempt() != null && mActivity.getRetryAttempt() > 0) {
+            retryOptions = RetryOptions.newBuilder()
+                    .setMaximumAttempts(mActivity.getRetryAttempt())
+                    .build();
         }
 
         return ActivityOptions.newBuilder()
                 .setStartToCloseTimeout(Duration.ofSeconds(30))
-                .setRetryOptions(RetryOptions.newBuilder().setMaximumAttempts(retryAttempts).build())
+                .setRetryOptions(retryOptions)
                 .build();
     }
 
@@ -117,7 +125,7 @@ public class DynamicWorkflowImpl implements DynamicWorkflow {
 
             // Update inbox with failure status and error message for the failed activity
             if (activityList.get(i).getSequenceNo().equals(currentActivityIndex)){
-                inboxActivity.updateInbox(TemporalConstant.INBOX_STATUS_FAILED, requestId, e.toString());
+                inboxActivity.updateInbox(TemporalConstant.INBOX_STATUS_FAILED, requestId, e.getCause().toString());
             }else{
                 inboxActivity.updateInbox(TemporalConstant.INBOX_STATUS_FAILED, requestId,null);
             }
@@ -135,7 +143,6 @@ public class DynamicWorkflowImpl implements DynamicWorkflow {
             if (StringUtils.hasText(mActivity.getNotifyMethod())){
                 String requestId = activityRequest.get(mActivity.getActivityType());
                 String notifyResult = null;
-
 
                 notifyResult = notificationActivity.sendNotification(TemporalConstant.NOTIFY_TYPE_COMPLETED, mActivity);
                 inboxActivity.updateInbox(TemporalConstant.INBOX_STATUS_NOTIFIED, requestId, notifyResult);

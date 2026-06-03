@@ -51,7 +51,7 @@ public class KafkaClient {
 
     public Object waitForMessage(MKafkaConfig config) {
         if (config == null) {
-            throw new RuntimeException("Kafka config is null");
+            return null;
         }
 
         KafkaConsumer<String, String> consumer = null;

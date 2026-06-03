@@ -21,11 +21,11 @@ public class WorkflowService {
         return workflowRepository.findAllWorkflowTaskQueue();
     }
 
-    public Integer getActivityNumberByWorkflowId(Integer workflowId) {
-        return workflowRepository.getActivityNumberByWorkflowId(workflowId);
-    }
-
     public void createConfigWorkflow(MWorkflow mWorkflow) {
         workflowRepository.save(mWorkflow);
+    }
+
+    public List<MWorkflow> getAllWorkflow() {
+        return workflowRepository.findAll();
     }
 }

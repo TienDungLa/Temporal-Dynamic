@@ -11,6 +11,7 @@ public class ActivityService {
     private final ActivityRepository activityRepository;
 
     public ActivityService(ActivityRepository activityRepository) {
+
         this.activityRepository = activityRepository;
     }
 
@@ -19,11 +20,11 @@ public class ActivityService {
         return "Create activity successfully";
     }
 
-    public MActivity getActivityByWorkflowIdAdSequence(Integer workflowId, Integer sequence){
-        return activityRepository.findByWorkflowIdAndSequenceNo(workflowId, sequence);
-    }
-
     public List<MActivity> getListActivityByWorkflowId(Integer workflowId){
         return activityRepository.findByWorkflowId(workflowId);
+    }
+
+    public List<MActivity> getAllActivity0(){
+        return activityRepository.getAllActivity0();
     }
 }

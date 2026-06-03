@@ -77,7 +77,7 @@ public class HttpRestClient {
                         requestBuilder.header("Authorization", "Bearer " + config.getSecurityValue());
                         break;
                     case "APIKEY":
-                        requestBuilder.header("API-Key", config.getSecurityValue());
+                        requestBuilder.header("API-KEY", config.getSecurityValue());
                         break;
                     case "BASIC":
                         requestBuilder.header("Authorization", "Basic " + config.getSecurityValue());
@@ -88,12 +88,28 @@ public class HttpRestClient {
             }
 
             HttpRequest request = requestBuilder.build();
-            HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
+            HttpResponse<String> response = null;
+            try {
+                response = client.send(request, HttpResponse.BodyHandlers.ofString());
+            } catch (Exception e) {
+                throw new RuntimeException("HTTP request failed at send: " + e.getMessage(), e);
+            }
+
+            if (response == null) {
+                throw new RuntimeException("HTTP request failed: response is null");
+            }
+
+            int statusCode = response.statusCode();
+            if (statusCode < 200 || statusCode >= 300) {
+                throw new RuntimeException(
+                        String.format("HTTP request failed with status=%d, body=%s", statusCode, response.body())
+                );
+            }
 
             return response.body();
 
         } catch (Exception e) {
-            throw new RuntimeException("Error sending HTTP request: " + e.getMessage(), e);
+            throw new RuntimeException("Error sending HTTP request: " + e.getMessage());
         }
     }
 }

@@ -15,8 +15,7 @@ public interface WorkflowRepository extends JpaRepository<MWorkflow, Integer> {
 
     @Query("SELECT w.workflowTaskqueue FROM MWorkflow w")
     List<String> findAllWorkflowTaskQueue();
-
-    @Query("SELECT count(*) FROM MActivity ma WHERE ma.workflowId = :workflowId")
-    Integer getActivityNumberByWorkflowId(Integer workflowId);
+    
+    List<MWorkflow> findAll();
 }
 
