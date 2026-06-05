@@ -17,5 +17,7 @@ public interface WorkflowRepository extends JpaRepository<MWorkflow, Integer> {
     List<String> findAllWorkflowTaskQueue();
     
     List<MWorkflow> findAll();
+
+    MWorkflow findByWorkflowId(Integer workflowId);
 }
 

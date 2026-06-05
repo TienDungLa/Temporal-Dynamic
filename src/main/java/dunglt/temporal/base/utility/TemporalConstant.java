@@ -23,4 +23,7 @@ public class TemporalConstant {
     public static final String MQ_CONFIG_TYPE_SEND = "SEND";
     public static final String MQ_CONFIG_TYPE_RESPONSE = "RESPONSE";
     public static final String MQ_CONFIG_TYPE_NOTIFY = "NOTIFY";
+
+    public static final String SEND_METHOD_REST = "REST";
+    public static final String SEND_METHOD_MQ = "MQ";
 }

@@ -28,4 +28,12 @@ public class WorkflowService {
     public List<MWorkflow> getAllWorkflow() {
         return workflowRepository.findAll();
     }
+
+    public MWorkflow findByWorkflowType(String workflowType) {
+        return workflowRepository.findByWorkflowType(workflowType);
+    }
+
+    public MWorkflow findByWorkflowId(Integer workflowId) {
+        return workflowRepository.findByWorkflowId(workflowId);
+    }
 }

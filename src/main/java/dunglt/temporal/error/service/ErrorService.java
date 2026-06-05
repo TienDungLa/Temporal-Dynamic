@@ -8,11 +8,11 @@ import org.springframework.stereotype.Service;
 public class ErrorService {
 
     public AppException notFound(String code, String message, String details) {
-        return new AppException(HttpStatus.NOT_FOUND, code, message, details);
+        throw new AppException(HttpStatus.NOT_FOUND, code, message, details);
     }
 
     public AppException badRequest(String code, String message, String details) {
-        return new AppException(HttpStatus.BAD_REQUEST, code, message, details);
+        throw new AppException(HttpStatus.BAD_REQUEST, code, message, details);
     }
 
     public AppException externalHttpError(HttpStatus status, String code, String message, String details) {

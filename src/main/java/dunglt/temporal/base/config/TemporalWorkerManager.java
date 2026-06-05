@@ -3,11 +3,10 @@ package dunglt.temporal.base.config;
 import dunglt.temporal.base.activity.DynamicActivityImpl;
 import dunglt.temporal.base.activity.IInboxActivityImpl;
 import dunglt.temporal.base.activity.NotificationActivityImpl;
-import dunglt.temporal.base.model.MActivity;
-import dunglt.temporal.base.model.MWorkflow;
+
 import dunglt.temporal.base.service.ActivityService;
 import dunglt.temporal.base.service.WorkflowService;
-import dunglt.temporal.base.utility.DynamicControllerGenerator;
+import dunglt.temporal.base.utility.TriggerRegistry;
 import dunglt.temporal.base.workflow.DynamicWorkflowImpl;
 import io.temporal.client.WorkflowClient;
 import io.temporal.worker.Worker;
@@ -23,17 +22,15 @@ import java.util.Map;
 public class TemporalWorkerManager {
     private WorkerFactory workerFactory;
     private final WorkflowService workflowService;
-    private final ActivityService activityService;
     private final WorkflowClient workflowClient;
-    private final DynamicControllerGenerator dynamicControllerGenerator;
+    private  TriggerRegistry triggerRegistry;
     private Map<String, Worker> activeWorker = new HashMap<>();
 
 
-    public TemporalWorkerManager(WorkflowService workflowService, ActivityService activityService, WorkflowClient workflowClient, DynamicControllerGenerator dynamicControllerGenerator) {
+    public TemporalWorkerManager(WorkflowService workflowService, WorkflowClient workflowClient, TriggerRegistry triggerRegistry) {
         this.workflowService = workflowService;
-        this.activityService = activityService;
         this.workflowClient = workflowClient;
-        this.dynamicControllerGenerator = dynamicControllerGenerator;
+        this.triggerRegistry = triggerRegistry;
     }
 
     @PostConstruct
@@ -41,7 +38,6 @@ public class TemporalWorkerManager {
         initWorkerFactory();
         getActiveWorkersFromFactory();
         workerFactory.start();
-        loadControllerClass();
     }
 
     public Map<String, Worker> getActiveWorkersFromFactory() {
@@ -65,20 +61,12 @@ public class TemporalWorkerManager {
         }
     }
 
-    private void loadControllerClass() {
-        List<MActivity> activityList = activityService.getAllActivity0();
-        for (MActivity mActivity : activityList){
-            dynamicControllerGenerator.generateAndRegister(mActivity);
-        }
-    }
-
     public String reloadWorkerFactory(){
         workerFactory.shutdown();
         initWorkerFactory();
         getActiveWorkersFromFactory();
+        triggerRegistry.reloadConfig();
         workerFactory.start();
-        dynamicControllerGenerator.unregisterAllGeneratedControllers();
-        loadControllerClass();
         return "Reloaded workers successfully. ";
     }
 
