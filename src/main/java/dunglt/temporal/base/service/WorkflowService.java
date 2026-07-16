@@ -1,6 +1,7 @@
 package dunglt.temporal.base.service;
 
 import dunglt.temporal.base.model.MWorkflow;
+import dunglt.temporal.base.repository.InboxRepository;
 import dunglt.temporal.base.repository.WorkflowRepository;
 
 import org.springframework.stereotype.Service;
@@ -11,10 +12,12 @@ import java.util.List;
 public class WorkflowService {
 
     private final WorkflowRepository workflowRepository;
+    private final InboxRepository inboxRepository;
 
 
-    public WorkflowService(WorkflowRepository workflowRepository) {
+    public WorkflowService(WorkflowRepository workflowRepository, InboxRepository inboxRepository) {
         this.workflowRepository = workflowRepository;
+        this.inboxRepository = inboxRepository;
     }
 
     public List<String> getListWorkflowTaskQueue() {
@@ -35,5 +38,9 @@ public class WorkflowService {
 
     public MWorkflow findByWorkflowId(Integer workflowId) {
         return workflowRepository.findByWorkflowId(workflowId);
+    }
+
+    public boolean isWorkflowExist(String workflowId) {
+        return inboxRepository.existsByWorkflowId(workflowId) > 0;
     }
 }

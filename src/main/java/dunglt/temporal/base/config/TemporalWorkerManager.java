@@ -62,6 +62,11 @@ public class TemporalWorkerManager {
     }
 
     public String reloadWorkerFactory(){
+
+        if (workerFactory == null) {
+            return "Worker factory is not initialized yet.";
+        }
+
         workerFactory.shutdown();
         initWorkerFactory();
         getActiveWorkersFromFactory();

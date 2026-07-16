@@ -5,6 +5,7 @@ import dunglt.temporal.base.model.MActivity;
 import dunglt.temporal.base.model.MWorkflow;
 import dunglt.temporal.base.repository.WorkflowRepository;
 import dunglt.temporal.error.service.ErrorService;
+import io.temporal.api.enums.v1.WorkflowIdConflictPolicy;
 import io.temporal.client.WorkflowClient;
 import io.temporal.client.WorkflowOptions;
 import io.temporal.client.WorkflowStub;
@@ -32,12 +33,6 @@ public class WorkflowClientService {
         String workflowType = sendData.getWorkflowType();
         MWorkflow mWorkflow = workflowRepository.findByWorkflowType(workflowType);
 
-        if (mWorkflow ==null){
-             throw errorService.notFound("WORKFLOW_TYPE_NOT_FOUND",
-                    "Workflow type not found",
-                    "workflowType=" + workflowType);
-        }
-
         WorkflowOptions options = getWorkflowOptions(mWorkflow, requestId);
         WorkflowStub stub = workflowClient.newUntypedWorkflowStub(
                 "DynamicWorkflowImpl",
@@ -45,8 +40,8 @@ public class WorkflowClientService {
         );
 
         List<MActivity> activityList = activityService.getListActivityByWorkflowId(mWorkflow.getWorkflowId());
-        stub.start(mWorkflow, activityList, sendData, requestId);
 
+        stub.start(mWorkflow, activityList, sendData, requestId);
 
     }
 

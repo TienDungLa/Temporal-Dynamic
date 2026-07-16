@@ -37,3 +37,9 @@ service:
     include_stacktrace: never
     include-binding-errors: never
     include-exception: false
+
+logging:
+  level:
+    org:
+      apache:
+        kafka=OFF:

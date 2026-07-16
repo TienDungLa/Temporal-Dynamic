@@ -16,7 +16,7 @@ public class ErrorService {
     }
 
     public AppException externalHttpError(HttpStatus status, String code, String message, String details) {
-        return new AppException(status, code, message, details);
+        throw new AppException(status, code, message, details);
     }
 
     public void nonRetryableError(String message) {
@@ -24,6 +24,7 @@ public class ErrorService {
     }
 
         public void retryableError(String message) {
-            throw ApplicationFailure.newFailure(message, "RetryableError");
+
+        throw ApplicationFailure.newFailure(message, "RetryableError");
         }
 }

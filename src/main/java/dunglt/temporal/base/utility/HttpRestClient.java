@@ -14,7 +14,7 @@ public class HttpRestClient {
 
     private final ObjectMapper objectMapper = new ObjectMapper();
 
-    public String sendRequest(Object data, MRestConfig config){
+    public String sendRequest(Object data, MRestConfig config, String requestId) {
 
         if (config == null){
             return null;
@@ -59,6 +59,10 @@ public class HttpRestClient {
                 requestBuilder.header("Content-Type", "application/json");
             }
 
+            if (requestId != null) {
+                requestBuilder.header("Request-ID", requestId);
+            }
+
             // Set custom headers
             if (config.getHeaders() != null && !config.getHeaders().isEmpty()) {
                 try {
@@ -88,6 +92,9 @@ public class HttpRestClient {
             }
 
             HttpRequest request = requestBuilder.build();
+            System.out.println("Request: " + request);
+            System.out.println("Request ts: " + requestBuilder.toString());
+
             HttpResponse<String> response = null;
             try {
                 response = client.send(request, HttpResponse.BodyHandlers.ofString());

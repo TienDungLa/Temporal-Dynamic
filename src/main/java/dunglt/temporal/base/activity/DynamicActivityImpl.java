@@ -18,8 +18,12 @@ import org.springframework.util.StringUtils;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.UUID;
 
 public class DynamicActivityImpl implements DynamicActivity {
+    private final String TYPE_REST = "REST";
+    private final String TYPE_MQ = "MQ";
+
     private static final Logger logger = LoggerFactory.getLogger(DynamicActivityImpl.class);
     private ErrorService errorService;
 
@@ -27,6 +31,7 @@ public class DynamicActivityImpl implements DynamicActivity {
     public Object execute(EncodedValues args) {
         MActivity mActivity = args.get(0, MActivity.class);
         Object data = args.get(1, Object.class);
+        String requestId = args.get(2, String.class);
         Map<String, Object> activityData = new HashMap<>();
         ConnectionService connectionService = SpringContextBridge.getBean(ConnectionService.class);
         errorService = SpringContextBridge.getBean(ErrorService.class);
@@ -40,14 +45,18 @@ public class DynamicActivityImpl implements DynamicActivity {
             }
 
             switch (mActivity.getSendMethod()) {
-                case "Rest":
+                case TYPE_REST:
                     MRestConfig restConfig = connectionService
                             .getRestConfigByActivityIdAndType(mActivity.getActivityId(), TemporalConstant.REST_CONFIG_TYPE_SEND);
                     HttpRestClient restClient = SpringContextBridge.getBean(HttpRestClient.class);
-                    Object response = restClient.sendRequest(data, restConfig);
+                    Object response = restClient.sendRequest(data, restConfig, requestId);
                     activityData.put("firstResponseData", response);
                     break;
-                case "MQ":
+                case TYPE_MQ:
+                    MKafkaConfig kafkaSendConfig = connectionService
+                            .getKafkaConfigByActivityIdAndType(mActivity.getActivityId(), TemporalConstant.MQ_CONFIG_TYPE_SEND);
+                    KafkaClient kafkaClient = SpringContextBridge.getBean(KafkaClient.class);
+                    kafkaClient.sendMessage(data, kafkaSendConfig, requestId);
                     break;
                 case "WH":
                     break;
@@ -56,14 +65,14 @@ public class DynamicActivityImpl implements DynamicActivity {
             // Handle response method if specified(rcm is mq), this response data will be used in next activity if needed
             if(StringUtils.hasText(mActivity.getResponseMethod())){
                     switch (mActivity.getResponseMethod()) {
-                        case "Rest":
+                        case TYPE_REST:
                             break;
-                        case "MQ":
+                        case TYPE_MQ:
                             MKafkaConfig config = connectionService
                                     .getKafkaConfigByActivityIdAndType(mActivity.getActivityId()
                                             , TemporalConstant.MQ_CONFIG_TYPE_RESPONSE);
                             KafkaClient client = SpringContextBridge.getBean(KafkaClient.class);
-                            Object responseData = client.waitForMessage(config);
+                            Object responseData = client.waitForMessage(config, requestId);
                             activityData.put("responseData", responseData);
                             break;
                     }

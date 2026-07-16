@@ -18,16 +18,16 @@ public class NotificationActivityImpl implements INotificationActivity{
         ConnectionService connectionService = SpringContextBridge.getBean(ConnectionService.class);
 
         if (typeNotify.equals(TemporalConstant.NOTIFY_TYPE_COMPLETED)){
-            if (mActivity.getNotifyMethod().equals("Rest")){
+            if (mActivity.getNotifyMethod().equals(TemporalConstant.NOTIFY_METHOD_REST)){
                 MRestConfig config = connectionService
                         .getRestConfigByActivityIdAndType(mActivity.getActivityId(), TemporalConstant.REST_CONFIG_TYPE_NOTIFY);
                 HttpRestClient restClient = SpringContextBridge.getBean(HttpRestClient.class);
-                String sendResult = restClient.sendRequest(defaultNotifyData(), config);
+                String sendResult = restClient.sendRequest(defaultNotifyData(), config, null);
                 if (sendResult == null){
                     return TemporalConstant.NOTIFY_SEND_FAILED;
                 }
                 return TemporalConstant.NOTIFY_SEND_COMPLETE;
-            } else if (mActivity.getNotifyMethod().equals("MQ")) {
+            } else if (mActivity.getNotifyMethod().equals(TemporalConstant.NOTIFY_METHOD_MQ)) {
                 MKafkaConfig config = connectionService
                         .getKafkaConfigByActivityIdAndType(mActivity.getActivityId(), TemporalConstant.MQ_CONFIG_TYPE_NOTIFY);
                 KafkaClient client = SpringContextBridge.getBean(KafkaClient.class);
@@ -40,11 +40,11 @@ public class NotificationActivityImpl implements INotificationActivity{
         }
 
         if (typeNotify.equals(TemporalConstant.NOTIFY_TYPE_COMPENSATION)) {
-            if (mActivity.getNotifyMethod().equals("Rest")) {
+            if (mActivity.getNotifyMethod().equals(TemporalConstant.NOTIFY_METHOD_REST)) {
                 MRestConfig config = connectionService
                         .getRestConfigByActivityIdAndType(mActivity.getActivityId(), TemporalConstant.REST_CONFIG_TYPE_NOTIFY);
                 HttpRestClient restClient = SpringContextBridge.getBean(HttpRestClient.class);
-                String sendResult = restClient.sendRequest(defaultNotifyData(), config);
+                String sendResult = restClient.sendRequest(defaultNotifyData(), config, null);
                 if (sendResult == null) {
                     return TemporalConstant.NOTIFY_SEND_FAILED;
                 }

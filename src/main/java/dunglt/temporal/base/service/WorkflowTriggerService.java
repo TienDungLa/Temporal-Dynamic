@@ -5,6 +5,7 @@ import dunglt.temporal.base.model.MWorkflow;
 import dunglt.temporal.base.utility.TemporalConstant;
 import dunglt.temporal.base.utility.TriggerRegistry;
 import dunglt.temporal.error.service.ErrorService;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
 /*
@@ -24,22 +25,32 @@ public class WorkflowTriggerService {
         this.triggerRegistry = triggerRegistry;
     }
 
-    public String validateAndStartWorkflow(String sendMethod, String requestId, DataDTO sendData, String path) {
+    public String validateAndStartWorkflow(String sendMethod, String requestId, DataDTO sendData, String url) {
+        // Validate trigger conditions
         String workflowType = sendData.getWorkflowType();
-        MWorkflow mWorkflow = workflowService.findByWorkflowType(workflowType);
+        if (!triggerRegistry.validateTrigger(workflowType, TemporalConstant.SEND_METHOD_REST, url)){
+            errorService.notFound("NOT_FOUND",
+                    "No trigger found for workflow type: " + workflowType + " and url: " + url
+                    , null);
+        }
 
+        //idempotency check
+        if(workflowService.isWorkflowExist(requestId)){
+            errorService.externalHttpError(HttpStatus.CONFLICT,
+                    "WORKFLOW_ALREADY_EXIST",
+                    "Workflow with requestId " + requestId + " already exists",
+                    null);
+        }
+
+        // Check if workflow type exists
+        MWorkflow mWorkflow = workflowService.findByWorkflowType(workflowType);
         if (mWorkflow ==null){
             throw errorService.notFound("WORKFLOW_TYPE_NOT_FOUND",
                     "Workflow type not found",
                     "workflowType=" + workflowType);
         }
 
-        if (!triggerRegistry.validateTrigger(workflowType, TemporalConstant.SEND_METHOD_REST, path)){
-            errorService.notFound("NOT_FOUND",
-                    "No trigger found for workflow type: " + workflowType + " and path: " + path
-                    , null);
-        }
-
+        // Start workflow execution
         workflowClientService.startWorkflow(sendData, requestId);
         return "Workflow started successfully";
     }

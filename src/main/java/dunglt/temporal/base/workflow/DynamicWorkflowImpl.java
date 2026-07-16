@@ -78,7 +78,7 @@ public class DynamicWorkflowImpl implements DynamicWorkflow {
 
                 // Execute activity and handle compensation if it fails
                 try{
-                    activityData =  activity.execute("DynamicActivityImpl", Map.class, mActivity, currentSendData);
+                    activityData =  activity.execute("DynamicActivityImpl", Map.class, mActivity, currentSendData, currentRequestId);
                     currentSendData = activityData.get("responseData");
                 }catch (ActivityFailure e){
                     logger.warn("Error in activity {}, starting compensation step", mActivity.getActivityType());
@@ -95,7 +95,11 @@ public class DynamicWorkflowImpl implements DynamicWorkflow {
             processNotificationStep(activityList);
 
         }catch (Exception e) {
-            logger.info("Error executing workflow: {}", mWorkflow.getWorkflowType());
+            logger.error("Error executing workflow: {}", mWorkflow.getWorkflowType(), e);
+            throw ApplicationFailure.newFailure(
+                    "Workflow failed: " + mWorkflow.getWorkflowType(),
+                    e.getClass().getSimpleName()
+            );
         }
 
         return null;

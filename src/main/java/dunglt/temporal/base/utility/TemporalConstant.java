@@ -26,4 +26,7 @@ public class TemporalConstant {
 
     public static final String SEND_METHOD_REST = "REST";
     public static final String SEND_METHOD_MQ = "MQ";
+
+    public static final String NOTIFY_METHOD_REST = "REST";
+    public static final String NOTIFY_METHOD_MQ = "MQ";
 }
